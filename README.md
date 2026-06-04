@@ -15,7 +15,7 @@ Cette version reprend le projet initial et factorise les contrôles récurrents 
 cd digimarket_api
 python3 -m venv .venv
 source .venv/bin/activate
-pip install -r requirements.txt
+python -m pip install -r requirements.txt
 cp .env.example .env
 ```
 
@@ -50,7 +50,7 @@ Pour les lancer plus tard:
 
 ```bash
 source .venv/bin/activate
-pytest
+python -m pytest
 ```
 
 Ou avec le script Linux:
