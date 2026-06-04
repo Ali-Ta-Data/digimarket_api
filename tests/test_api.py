@@ -1,0 +1,100 @@
+from app import db
+from app.models import Product
+
+
+def auth_header(token):
+    return {"Authorization": f"Bearer {token}"}
+
+
+def test_register_creates_client(client):
+    response = client.post(
+        "/api/auth/register",
+        json={"email": "new@test.fr", "password": "Password123!", "nom": "Nouveau"},
+    )
+
+    assert response.status_code == 201
+    assert response.get_json()["user"]["role"] == "client"
+
+
+def test_admin_can_create_product(client, admin_token):
+    response = client.post(
+        "/api/produits",
+        json={
+            "nom": "Station de travail",
+            "description": "PC puissant",
+            "categorie": "Ordinateurs",
+            "prix": 1899.0,
+            "quantite_stock": 3,
+        },
+        headers=auth_header(admin_token),
+    )
+
+    assert response.status_code == 201
+    assert response.get_json()["nom"] == "Station de travail"
+
+
+def test_client_cannot_create_product(client, client_token):
+    response = client.post(
+        "/api/produits",
+        json={"nom": "Produit interdit", "categorie": "Test", "prix": 1},
+        headers=auth_header(client_token),
+    )
+
+    assert response.status_code == 403
+
+
+def test_create_order_decrements_stock(app, client, client_token):
+    response = client.post(
+        "/api/commandes",
+        json={
+            "adresse_livraison": "10 rue de Paris, 75001 Paris",
+            "lignes": [{"produit_id": 1, "quantite": 2}],
+        },
+        headers=auth_header(client_token),
+    )
+
+    assert response.status_code == 201
+    data = response.get_json()
+    assert data["total"] == 99.8
+
+    with app.app_context():
+        product = db.session.get(Product, 1)
+        assert product.quantite_stock == 3
+
+
+def test_client_only_sees_own_orders(client, client_token, admin_token):
+    client.post(
+        "/api/commandes",
+        json={
+            "adresse_livraison": "10 rue de Paris, 75001 Paris",
+            "lignes": [{"produit_id": 1, "quantite": 1}],
+        },
+        headers=auth_header(client_token),
+    )
+
+    client_orders = client.get("/api/commandes", headers=auth_header(client_token))
+    admin_orders = client.get("/api/commandes", headers=auth_header(admin_token))
+
+    assert client_orders.status_code == 200
+    assert len(client_orders.get_json()) == 1
+    assert len(admin_orders.get_json()) == 1
+
+
+def test_admin_updates_order_status(client, client_token, admin_token):
+    created = client.post(
+        "/api/commandes",
+        json={
+            "adresse_livraison": "10 rue de Paris, 75001 Paris",
+            "lignes": [{"produit_id": 1, "quantite": 1}],
+        },
+        headers=auth_header(client_token),
+    ).get_json()
+
+    response = client.patch(
+        f"/api/commandes/{created['id']}",
+        json={"statut": "expediee"},
+        headers=auth_header(admin_token),
+    )
+
+    assert response.status_code == 200
+    assert response.get_json()["statut"] == "expediee"
