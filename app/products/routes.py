@@ -1,3 +1,9 @@
+"""Routes de gestion du catalogue produits.
+
+Les visiteurs peuvent consulter et rechercher les produits. Les opérations
+d'écriture sont protégées par JWT et réservées aux administrateurs.
+"""
+
 from flask import Blueprint, g, jsonify, request
 from flask_jwt_extended import jwt_required
 
@@ -11,6 +17,7 @@ products_bp = Blueprint("products", __name__, url_prefix="/api/produits")
 
 @products_bp.get("")
 def list_products():
+    """Retourne le catalogue, avec filtres optionnels q et categorie."""
     query = Product.query
     search = request.args.get("q")
     categorie = request.args.get("categorie")
@@ -27,6 +34,7 @@ def list_products():
 @products_bp.get("/<int:product_id>")
 @product_required
 def get_product(product_id):
+    """Retourne la fiche détaillée d'un produit chargé par product_required."""
     return jsonify(g.product.to_dict())
 
 
@@ -36,6 +44,7 @@ def get_product(product_id):
 @json_required(["nom", "categorie", "prix"])
 @validate_payload(lambda data: validate_product_payload(data, creation=True))
 def create_product():
+    """Crée un produit dans le catalogue, opération réservée aux admins."""
     data = g.json_data
     product = Product(
         nom=data["nom"].strip(),
@@ -56,6 +65,7 @@ def create_product():
 @json_required()
 @validate_payload(lambda data: validate_product_payload(data, creation=False))
 def update_product(product_id):
+    """Met à jour uniquement les champs fournis pour un produit existant."""
     product = g.product
     data = g.json_data
 
@@ -76,12 +86,19 @@ def update_product(product_id):
 @admin_required
 @product_required
 def delete_product(product_id):
+    """Supprime un produit du catalogue."""
     db.session.delete(g.product)
     db.session.commit()
     return "", 204
 
 
 def validate_product_payload(data, creation):
+    """Valide les valeurs métier d'un produit.
+
+    Args:
+        data: payload JSON envoyé par le client.
+        creation: True si le produit est créé, False s'il est modifié.
+    """
     if "prix" in data and float(data["prix"]) < 0:
         return "Le prix doit etre positif"
     stock_value = data.get("quantite_stock", 0 if creation else None)

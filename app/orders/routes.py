@@ -1,3 +1,9 @@
+"""Routes de gestion des commandes.
+
+Les clients consultent leurs propres commandes et peuvent en créer. Les admins
+peuvent consulter toutes les commandes et modifier leur statut.
+"""
+
 from flask import Blueprint, g, jsonify
 from flask_jwt_extended import get_jwt, get_jwt_identity, jwt_required
 
@@ -14,6 +20,10 @@ ALLOWED_STATUSES = {"en attente", "validee", "expediee", "annulee"}
 @orders_bp.get("")
 @jwt_required()
 def list_orders():
+    """Liste les commandes visibles par l'utilisateur courant.
+
+    Un admin voit toutes les commandes; un client ne voit que les siennes.
+    """
     claims = get_jwt()
     query = Order.query
     if claims.get("role") != "admin":
@@ -26,6 +36,7 @@ def list_orders():
 @jwt_required()
 @order_required(check_owner=True)
 def get_order(order_id):
+    """Retourne une commande avec ses lignes après contrôle d'accès."""
     return jsonify(g.order.to_dict(include_lignes=True))
 
 
@@ -34,6 +45,7 @@ def get_order(order_id):
 @json_required(["adresse_livraison", "lignes"])
 @validate_payload(lambda data: validate_order_payload(data))
 def create_order():
+    """Crée une commande et décrémente le stock des produits commandés."""
     data = g.json_data
     order = Order(
         utilisateur_id=int(get_jwt_identity()),
@@ -49,6 +61,7 @@ def create_order():
         if (product.quantite_stock or 0) < quantite:
             return jsonify({"message": f"Stock insuffisant pour {product.nom}"}), 409
 
+        # Le stock est décrémenté dans la même transaction que la création de commande.
         product.quantite_stock -= quantite
         order.lignes.append(
             OrderItem(produit=product, quantite=quantite, prix_unitaire=product.prix)
@@ -65,6 +78,7 @@ def create_order():
 @order_required(check_owner=False)
 @json_required(["statut"])
 def update_order_status(order_id):
+    """Modifie le statut d'une commande, uniquement pour les admins."""
     order = g.order
     data = g.json_data
     statut = data.get("statut")
@@ -79,10 +93,12 @@ def update_order_status(order_id):
 @jwt_required()
 @order_required(check_owner=True)
 def get_order_lines(order_id):
+    """Retourne uniquement les lignes d'une commande accessible."""
     return jsonify([ligne.to_dict() for ligne in g.order.lignes])
 
 
 def validate_order_payload(data):
+    """Vérifie qu'une commande contient des lignes valides."""
     lignes = data.get("lignes")
     if not isinstance(lignes, list) or not lignes:
         return "La commande doit contenir au moins une ligne"

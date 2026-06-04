@@ -1,3 +1,10 @@
+"""Configuration centrale de l'application Flask.
+
+Ce fichier regroupe les paramètres techniques utilisés au démarrage:
+chemin de base SQLite, clé JWT et options SQLAlchemy. Les variables
+d'environnement permettent d'adapter le projet sans modifier le code.
+"""
+
 import os
 from pathlib import Path
 
@@ -6,6 +13,11 @@ BASE_DIR = Path(__file__).resolve().parent
 
 
 def load_dotenv_file(path):
+    """Charge un fichier .env simple si python-dotenv n'est pas installé.
+
+    Le projet garde ainsi une dépendance minimale: chaque ligne KEY=VALUE
+    est ajoutée à os.environ uniquement si la variable n'existe pas déjà.
+    """
     if not path.exists():
         return
     for line in path.read_text(encoding="utf-8").splitlines():
@@ -20,6 +32,8 @@ load_dotenv_file(BASE_DIR / ".env")
 
 
 class Config:
+    """Configuration utilisée par défaut par create_app()."""
+
     SQLALCHEMY_DATABASE_URI = os.getenv(
         "DATABASE_URL", f"sqlite:///{BASE_DIR / 'digimarket.db'}"
     )

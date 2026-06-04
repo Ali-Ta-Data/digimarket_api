@@ -1,3 +1,10 @@
+"""Décorateurs réutilisables pour les routes Flask.
+
+Ces décorateurs factorisent les contrôles transverses: autorisation admin,
+lecture du JSON, validation métier et chargement des ressources. Les routes
+restent ainsi courtes et centrées sur leur action principale.
+"""
+
 from functools import wraps
 
 from flask import g, jsonify, request
@@ -8,6 +15,7 @@ from app.models import Order, Product
 
 
 def admin_required(fn):
+    """Autorise uniquement les utilisateurs dont le JWT contient role=admin."""
     @wraps(fn)
     def wrapper(*args, **kwargs):
         verify_jwt_in_request()
@@ -19,6 +27,11 @@ def admin_required(fn):
 
 
 def json_required(required_fields=None):
+    """Lit le corps JSON et vérifie la présence des champs obligatoires.
+
+    Les données validées sont stockées dans flask.g.json_data pour éviter de
+    relire request.get_json() dans chaque route.
+    """
     required_fields = required_fields or []
 
     def decorator(fn):
@@ -37,6 +50,10 @@ def json_required(required_fields=None):
 
 
 def validate_payload(validator):
+    """Applique une fonction de validation métier au JSON courant.
+
+    Le validator doit retourner None si tout va bien, ou un message d'erreur.
+    """
     def decorator(fn):
         @wraps(fn)
         def wrapper(*args, **kwargs):
@@ -51,6 +68,7 @@ def validate_payload(validator):
 
 
 def product_required(fn):
+    """Charge le produit demandé et le place dans flask.g.product."""
     @wraps(fn)
     def wrapper(product_id, *args, **kwargs):
         g.product = db.get_or_404(Product, product_id)
@@ -60,6 +78,7 @@ def product_required(fn):
 
 
 def order_required(check_owner=True):
+    """Charge une commande et contrôle son accès si check_owner vaut True."""
     def decorator(fn):
         @wraps(fn)
         def wrapper(order_id, *args, **kwargs):
@@ -75,5 +94,6 @@ def order_required(check_owner=True):
 
 
 def user_can_access_order(order):
+    """Détermine si l'utilisateur courant peut consulter la commande."""
     claims = get_jwt()
     return claims.get("role") == "admin" or order.utilisateur_id == int(get_jwt_identity())

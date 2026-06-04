@@ -1,8 +1,15 @@
+"""Script d'initialisation de la base de données de démonstration.
+
+À lancer avec: python -m app.seed
+Il recrée les tables puis ajoute un admin, un client et quelques produits.
+"""
+
 from app import create_app, db
 from app.models import Product, User
 
 
 def create_user(email, password, nom, role):
+    """Crée un utilisateur avec mot de passe hashé et l'ajoute à la session."""
     user = User(email=email, nom=nom, role=role)
     user.set_password(password)
     db.session.add(user)
@@ -10,8 +17,10 @@ def create_user(email, password, nom, role):
 
 
 def seed():
+    """Réinitialise la base SQLite et insère les données de test."""
     app = create_app()
     with app.app_context():
+        # drop_all est acceptable ici car ce script sert uniquement au seed local.
         db.drop_all()
         db.create_all()
 

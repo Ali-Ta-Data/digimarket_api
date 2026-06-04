@@ -1,12 +1,21 @@
+"""Tests fonctionnels des principaux parcours API.
+
+Ces tests couvrent l'authentification, les droits admin/client, la création
+de commande et la mise à jour du stock. Ils servent de filet de sécurité pour
+les fonctionnalités demandées dans le cahier des charges.
+"""
+
 from app import db
 from app.models import Product
 
 
 def auth_header(token):
+    """Construit l'en-tête Authorization attendu par les routes protégées."""
     return {"Authorization": f"Bearer {token}"}
 
 
 def test_register_creates_client(client):
+    """Une inscription standard crée toujours un utilisateur client."""
     response = client.post(
         "/api/auth/register",
         json={"email": "new@test.fr", "password": "Password123!", "nom": "Nouveau"},
@@ -17,6 +26,7 @@ def test_register_creates_client(client):
 
 
 def test_admin_can_create_product(client, admin_token):
+    """Un administrateur peut ajouter un produit au catalogue."""
     response = client.post(
         "/api/produits",
         json={
@@ -34,6 +44,7 @@ def test_admin_can_create_product(client, admin_token):
 
 
 def test_client_cannot_create_product(client, client_token):
+    """Un client authentifié ne peut pas créer de produit."""
     response = client.post(
         "/api/produits",
         json={"nom": "Produit interdit", "categorie": "Test", "prix": 1},
@@ -44,6 +55,7 @@ def test_client_cannot_create_product(client, client_token):
 
 
 def test_create_order_decrements_stock(app, client, client_token):
+    """Créer une commande décrémente le stock et calcule le total."""
     response = client.post(
         "/api/commandes",
         json={
@@ -63,6 +75,7 @@ def test_create_order_decrements_stock(app, client, client_token):
 
 
 def test_client_only_sees_own_orders(client, client_token, admin_token):
+    """Un client voit ses commandes tandis qu'un admin voit toutes les commandes."""
     client.post(
         "/api/commandes",
         json={
@@ -81,6 +94,7 @@ def test_client_only_sees_own_orders(client, client_token, admin_token):
 
 
 def test_admin_updates_order_status(client, client_token, admin_token):
+    """Un administrateur peut faire évoluer le statut d'une commande."""
     created = client.post(
         "/api/commandes",
         json={

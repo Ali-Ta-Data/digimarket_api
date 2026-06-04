@@ -1,3 +1,10 @@
+"""Modèles SQLAlchemy de l'API DigiMarket.
+
+Le schéma reprend les tables attendues pour une boutique e-commerce:
+utilisateurs, produits, commandes et lignes de commande. Chaque modèle
+fournit une méthode to_dict() pour produire des réponses JSON propres.
+"""
+
 from datetime import datetime, timezone
 
 from werkzeug.security import check_password_hash, generate_password_hash
@@ -6,10 +13,17 @@ from app import db
 
 
 def utc_now():
+    """Retourne une date UTC timezone-aware pour les champs de création."""
     return datetime.now(timezone.utc)
 
 
 class User(db.Model):
+    """Utilisateur de la plateforme.
+
+    role vaut "client" ou "admin". Le mot de passe n'est jamais stocké en clair:
+    seul un hash généré par Werkzeug est conservé en base.
+    """
+
     __tablename__ = "user"
 
     id = db.Column(db.Integer, primary_key=True)
@@ -22,12 +36,15 @@ class User(db.Model):
     commandes = db.relationship("Order", back_populates="utilisateur")
 
     def set_password(self, password):
+        """Hash le mot de passe avant stockage."""
         self.password_hash = generate_password_hash(password)
 
     def check_password(self, password):
+        """Vérifie un mot de passe en clair contre le hash stocké."""
         return check_password_hash(self.password_hash, password)
 
     def to_dict(self):
+        """Sérialise l'utilisateur sans exposer password_hash."""
         return {
             "id": self.id,
             "email": self.email,
@@ -38,6 +55,8 @@ class User(db.Model):
 
 
 class Product(db.Model):
+    """Produit disponible dans le catalogue DigiMarket."""
+
     __tablename__ = "product"
 
     id = db.Column(db.Integer, primary_key=True)
@@ -51,6 +70,7 @@ class Product(db.Model):
     lignes = db.relationship("OrderItem", back_populates="produit")
 
     def to_dict(self):
+        """Sérialise le produit avec un indicateur de disponibilité."""
         return {
             "id": self.id,
             "nom": self.nom,
@@ -64,6 +84,12 @@ class Product(db.Model):
 
 
 class Order(db.Model):
+    """Commande passée par un client.
+
+    Une commande contient une adresse, un statut et une collection de lignes.
+    Le total est calculé dynamiquement à partir des lignes de commande.
+    """
+
     __tablename__ = "order"
 
     id = db.Column(db.Integer, primary_key=True)
@@ -78,6 +104,7 @@ class Order(db.Model):
     )
 
     def to_dict(self, include_lignes=False):
+        """Sérialise la commande, avec les lignes si demandé."""
         data = {
             "id": self.id,
             "utilisateur_id": self.utilisateur_id,
@@ -92,6 +119,12 @@ class Order(db.Model):
 
 
 class OrderItem(db.Model):
+    """Ligne de commande associant un produit, une quantité et un prix figé.
+
+    prix_unitaire est copié depuis le produit au moment de la commande pour
+    conserver l'historique même si le prix du catalogue change ensuite.
+    """
+
     __tablename__ = "order_item"
 
     id = db.Column(db.Integer, primary_key=True)
@@ -105,9 +138,11 @@ class OrderItem(db.Model):
 
     @property
     def total(self):
+        """Montant de la ligne: quantité multipliée par prix unitaire."""
         return self.quantite * self.prix_unitaire
 
     def to_dict(self):
+        """Sérialise une ligne de commande pour les réponses API."""
         return {
             "id": self.id,
             "commande_id": self.commande_id,
