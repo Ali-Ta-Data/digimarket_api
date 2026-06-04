@@ -10,6 +10,30 @@ from app import create_app, db
 from app.models import Product, User
 
 
+TEST_DESCRIPTIONS = {}
+
+
+def pytest_collection_modifyitems(config, items):
+    """Mémorise la description de chaque test au moment où pytest les collecte."""
+    for item in items:
+        docstring = getattr(item.function, "__doc__", None)
+        TEST_DESCRIPTIONS[item.nodeid] = docstring.strip() if docstring else item.nodeid
+
+
+def pytest_runtest_logreport(report):
+    """Affiche une description lisible quand un test est réussi.
+
+    Pytest affiche par défaut un point par test avec l'option -q. Ce hook ajoute
+    une ligne explicite basée sur la docstring du test, ce qui rend le résultat
+    plus compréhensible pour une personne qui découvre la suite de tests.
+    """
+    if report.when != "call" or not report.passed:
+        return
+
+    description = TEST_DESCRIPTIONS.get(report.nodeid, report.nodeid)
+    print(f"PASS - {description}")
+
+
 class TestConfig:
     """Configuration dédiée aux tests."""
 
