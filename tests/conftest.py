@@ -54,6 +54,10 @@ def app():
         admin.set_password("Admin123!")
         client = User(email="client@test.fr", nom="Client", role="client")
         client.set_password("Client123!")
+
+        client2 = User(email="client2@test.fr", nom="Client2", role="client2")
+        client2.set_password("ClientABC!")
+        
         product = Product(
             nom="Souris ergonomique",
             description="Souris sans fil",
@@ -61,7 +65,7 @@ def app():
             prix=49.90,
             quantite_stock=5,
         )
-        db.session.add_all([admin, client, product])
+        db.session.add_all([admin, client,client2, product])
         db.session.commit()
 
         yield app
@@ -93,3 +97,8 @@ def admin_token(client):
 def client_token(client):
     """Token JWT d'un client de test."""
     return login(client, "client@test.fr", "Client123!")
+
+@pytest.fixture()
+def client_token2(client):
+    """Token JWT d'un client de test."""
+    return login(client, "client2@test.fr", "ClientABC!")
