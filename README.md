@@ -20,6 +20,8 @@ cp .env.example .env
 ```
 
 ## Initialisation de la base
+Ne pas hésiter à réinitialiser la base si besoin après 
+le lancement des tests préparés pour repartir d'une base de données "propre"
 
 ```bash
 source .venv/bin/activate
