@@ -3,14 +3,14 @@ Dépot : https://github.com/Ali-Ta-Data/digimarket_api
 
 API REST Flask pour la boutique e-commerce DigiMarket, préparée pour un environnement Linux.
 
-Cette version reprend le projet initial et factorise les contrôles récurrents avec des décorateurs:
+Cette version met à disposition les API (pour du front par exemple), elle factorise les contrôles récurrents avec des décorateurs:
 
 - `@admin_required` pour les routes réservées aux administrateurs.
 - `@json_required(...)` pour centraliser la lecture et la vérification du JSON.
 - `@validate_payload(...)` pour appliquer les validateurs métier.
 - `@product_required` et `@order_required(...)` pour charger les ressources et contrôler les accès.
 
-## Installation Linux
+## Installation 
 
 ```bash
 cd digimarket_api
