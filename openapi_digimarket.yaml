@@ -1,0 +1,280 @@
+openapi: 3.0.3
+info:
+  title: DigiMarket API
+  version: 1.0.0
+  description: API e-commerce Flask avec authentification JWT, catalogue produits et commandes.
+servers:
+  - url: http://127.0.0.1:5000
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    User:
+      type: object
+      properties:
+        id: {type: integer}
+        email: {type: string, format: email}
+        nom: {type: string}
+        role: {type: string, enum: [client, admin]}
+        date_creation: {type: string, format: date-time}
+
+    Product:
+      type: object
+      properties:
+        id: {type: integer}
+        nom: {type: string}
+        description: {type: string, nullable: true}
+        categorie: {type: string}
+        prix: {type: number, format: float}
+        quantite_stock: {type: integer}
+        disponible: {type: boolean}
+        date_creation: {type: string, format: date-time}
+
+    OrderItem:
+      type: object
+      properties:
+        id: {type: integer}
+        commande_id: {type: integer}
+        produit_id: {type: integer}
+        produit: {type: string}
+        quantite: {type: integer}
+        prix_unitaire: {type: number}
+        total: {type: number}
+
+    Order:
+      type: object
+      properties:
+        id: {type: integer}
+        utilisateur_id: {type: integer}
+        date_commande: {type: string, format: date-time}
+        adresse_livraison: {type: string}
+        statut:
+          type: string
+          enum: ["en attente", "validee", "expediee", "annulee"]
+        total: {type: number}
+        lignes:
+          type: array
+          items:
+            $ref: '#/components/schemas/OrderItem'
+
+paths:
+  /api/health:
+    get:
+      tags: [System]
+      summary: Vérification de santé, Endpoint simple pour vérifier que l'API répond
+      responses:
+        '200':
+          description: OK
+
+  /api/auth/register:
+    post:
+      tags: [Authentication]
+      summary: Créer un utilisateur
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password, nom]
+              properties:
+                email: {type: string}
+                password: {type: string}
+                nom: {type: string}
+                role: {type: string}
+      responses:
+        '201':
+          description: Utilisateur créé
+
+  /api/auth/login:
+    post:
+      tags: [Authentication]
+      summary: Authentification utilisateur
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email: {type: string}
+                password: {type: string}
+      responses:
+        '200':
+          description: JWT généré
+
+  /api/produits:
+    get:
+      tags: [Products]
+      summary: Catalogue des produits avec paramètres (non obligatoire)
+      parameters:
+        - in: query
+          name: nom
+          schema: {type: string}
+        - in: query
+          name: categorie
+          schema: {type: string}
+      responses:
+        '200':
+          description: Liste des produits
+    post:
+      tags: [Products]
+      summary: Créer un produit [Admin]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [nom, categorie, prix]
+              properties:
+                nom: {type: string}
+                description: {type: string}
+                categorie: {type: string}
+                prix: {type: number}
+                quantite_stock: {type: integer}
+      responses:
+        '201':
+          description: Produit créé
+
+  /api/produits/{product_id}:
+    get:
+      tags: [Products]
+      summary: Détail produit [Admin]
+      parameters:
+        - in: path
+          name: product_id
+          required: true
+          schema: {type: integer}
+      responses:
+        '200':
+          description: Produit sélectionné
+    put:
+      tags: [Products]
+      summary: Modifier un produit [Admin]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: product_id
+          required: true
+          schema: {type: integer}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Product'
+      responses:
+        '200':
+          description: Produit modifié
+    delete:
+      tags: [Products]
+      summary: Supprimer un produit [Admin]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: product_id
+          required: true
+          schema: {type: integer}
+      responses:
+        '204':
+          description: Supprimé
+
+  /api/commandes:
+    get:
+      tags: [Orders]
+      summary: Liste des commandes visibles
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Liste des commandes
+    post:
+      tags: [Orders]
+      summary: Créer une commande
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [adresse_livraison, lignes]
+              properties:
+                adresse_livraison:
+                  type: string
+                lignes:
+                  type: array
+                  items:
+                    type: object
+                    required: [produit_id, quantite]
+                    properties:
+                      produit_id: {type: integer}
+                      quantite: {type: integer}
+      responses:
+        '201':
+          description: Commande créée
+
+  /api/commandes/{order_id}:
+    get:
+      tags: [Orders]
+      summary: Détail d'une commande
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: order_id
+          required: true
+          schema: {type: integer}
+      responses:
+        '200':
+          description: Commande
+    patch:
+      tags: [Orders]
+      summary: Modifier le statut d'une commande [Admin]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: order_id
+          required: true
+          schema: {type: integer}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [statut]
+              properties:
+                statut:
+                  type: string
+      responses:
+        '200':
+          description: Statut mis à jour
+
+  /api/commandes/{order_id}/lignes:
+    get:
+      tags: [Orders]
+      summary: Lignes d'une commande
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: order_id
+          required: true
+          schema: {type: integer}
+      responses:
+        '200':
+          description: Lignes de commande

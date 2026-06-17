@@ -42,6 +42,20 @@ def test_admin_can_create_product(client, admin_token):
     assert response.status_code == 201
     assert response.get_json()["nom"] == "Station de travail"
 
+def test_liste_catalog(client,client_token):
+    """Liste les produits avec filtre nom"""
+    response = client.get(
+        "/api/produits",
+        json={
+            "nom": "Station de travail"
+        },
+        headers=auth_header(client_token),
+    )
+
+    assert response.status_code == 200
+    assert len(response.get_json()) == 1
+
+    
 
 def test_client_cannot_create_product(client, client_token):
     """Un client authentifié ne peut pas créer de produit."""

@@ -42,24 +42,10 @@ python run.py
 
 L'API démarre sur `http://127.0.0.1:5000`.
 
-## Tests préparés
-
-Les tests sont fournis dans le dossier `tests/`, mais ils n'ont pas été exécutés pour cette version comme demandé.
-
-Pour les lancer plus tard:
-
-```bash
-source .venv/bin/activate
-python -m pytest
-```
-
-Ou avec le script Linux:
-
-```bash
-bash scripts/test.sh
-```
 
 ## Endpoints
+ Une description plus complète est présenté dans le fichier 
+`open_api_digimarket.yaml`, ce qui permettra à un développeur de comprendre et d'utiliser facilement l'API
 
 ### Authentification
 
@@ -88,4 +74,20 @@ bash scripts/test.sh
 curl -X POST http://127.0.0.1:5000/api/auth/login \
   -H "Content-Type: application/json" \
   -d '{"email":"admin@digimarket.fr","password":"Admin123!"}'
+```
+
+
+## Tests préparés
+
+Les tests sont fournis dans le dossier `tests/`, on peut les lancer de la façon suivante
+
+```bash
+source .venv/bin/activate
+python -m pytest
+```
+
+Ou avec le script Linux:
+
+```bash
+bash scripts/test.sh
 ```

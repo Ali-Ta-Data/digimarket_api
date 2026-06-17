@@ -14,11 +14,11 @@ from app.models import Product
 
 products_bp = Blueprint("products", __name__, url_prefix="/api/produits")
 
-"""Navigation: Retourne le catalogue, avec filtres optionnels q et categorie."""
+"""Navigation: Retourne le catalogue, avec filtres optionnels nom et categorie."""
 @products_bp.get("")
 def list_products():
     query = Product.query
-    search = request.args.get("q")
+    search = request.args.get("nom")
     categorie = request.args.get("categorie")
     if search:
         pattern = f"%{search}%"
