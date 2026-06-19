@@ -4,6 +4,7 @@ Le schéma reprend les tables attendues pour une boutique e-commerce:
 utilisateurs, produits, commandes et lignes de commande. Chaque modèle
 fournit une méthode to_dict() pour produire des réponses JSON propres.
 """
+import enum
 
 from datetime import datetime, timezone
 
@@ -16,6 +17,9 @@ def utc_now():
     """Retourne une date UTC timezone-aware pour les champs de création."""
     return datetime.now(timezone.utc)
 
+class RoleEnum(str, enum.Enum):
+    client = "client"
+    admin = "admin"
 
 class User(db.Model):
     """Utilisateur de la plateforme.
@@ -30,7 +34,7 @@ class User(db.Model):
     email = db.Column(db.String(120), unique=True, nullable=False)
     password_hash = db.Column(db.String(256), nullable=False)
     nom = db.Column(db.String(100), nullable=False)
-    role = db.Column(db.String(20), nullable=False, default="client")
+    role = db.Column(db.Enum(RoleEnum), nullable=False, default=RoleEnum.client)
     date_creation = db.Column(db.DateTime, nullable=False, default=utc_now)
 
     commandes = db.relationship("Order", back_populates="utilisateur")
