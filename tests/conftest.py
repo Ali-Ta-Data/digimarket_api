@@ -55,7 +55,7 @@ def app():
         client = User(email="client@test.fr", nom="Client", role="client")
         client.set_password("Client123!")
 
-        client2 = User(email="client2@test.fr", nom="Client2", role="client2")
+        client2 = User(email="client2@test.fr", nom="Client2", role="client")
         client2.set_password("ClientABC!")
         
         product = Product(
