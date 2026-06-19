@@ -14,9 +14,9 @@ from app.models import Product
 
 products_bp = Blueprint("products", __name__, url_prefix="/api/produits")
 
-"""Navigation: Retourne le catalogue, avec filtres optionnels nom et categorie."""
 @products_bp.get("")
 def list_products():
+    """Navigation: Retourne le catalogue, avec filtres optionnels nom et categorie."""
     query = Product.query
     search = request.args.get("nom")
     categorie = request.args.get("categorie")
@@ -30,19 +30,19 @@ def list_products():
     return jsonify([product.to_dict() for product in query.order_by(Product.nom).all()])
 
 
-"""Retourne la fiche détaillée d'un produit chargé à partir de l'id"""
 @products_bp.get("/<int:product_id>")
 @product_required
 def get_product(product_id):
+    """Retourne la fiche détaillée d'un produit chargé à partir de l'id"""
     return jsonify(g.product.to_dict())
 
-"""Crée un produit dans le catalogue, opération réservée aux admins."""
 @products_bp.post("")
 @jwt_required()
 @admin_required
 @json_required(["nom", "categorie", "prix"])
 @validate_payload(lambda data: validate_product_payload(data, creation=True))
 def create_product():
+    """Crée un produit dans le catalogue, opération réservée aux admins."""
     data = g.json_data
     product = Product(
         nom=data["nom"].strip(),
@@ -56,7 +56,6 @@ def create_product():
     return jsonify(product.to_dict()), 201
 
 
-"""Modifier un produit existant réservé aux admin"""
 @products_bp.put("/<int:product_id>")
 @jwt_required()
 @admin_required
@@ -64,6 +63,7 @@ def create_product():
 @json_required()
 @validate_payload(lambda data: validate_product_payload(data, creation=False))
 def update_product(product_id):
+    """Modifier un produit existant réservé aux admin"""
     product = g.product
     data = g.json_data
 
@@ -79,12 +79,12 @@ def update_product(product_id):
     return jsonify(product.to_dict())
 
 
-"""Supprimer un produit du catalogue réservé aux admins."""
 @products_bp.delete("/<int:product_id>")
 @jwt_required()
 @admin_required
 @product_required
 def delete_product(product_id):
+    """Supprimer un produit du catalogue réservé aux admins."""
     db.session.delete(g.product)
     db.session.commit()
     return "", 204
