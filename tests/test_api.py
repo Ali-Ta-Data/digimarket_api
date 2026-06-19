@@ -140,6 +140,8 @@ def test_admin_updates_order_status(client, client_token, admin_token):
         json={"statut": "expediee"},
         headers=auth_header(admin_token),
     )
+    assert response.status_code == 200
+    assert response.get_json()["statut"] == "expediee"
 
 def test_create_order_insufficient_stock(client, client_token):
     """Une commande avec quantité supérieure au stock doit retourner 409."""
@@ -153,5 +155,3 @@ def test_create_order_insufficient_stock(client, client_token):
     )
     assert response.status_code == 409
 
-    assert response.status_code == 200
-    assert response.get_json()["statut"] == "expediee"
