@@ -141,5 +141,17 @@ def test_admin_updates_order_status(client, client_token, admin_token):
         headers=auth_header(admin_token),
     )
 
+def test_create_order_insufficient_stock(client, client_token):
+    """Une commande avec quantité supérieure au stock doit retourner 409."""
+    response = client.post(
+        "/api/commandes",
+        json={
+            "adresse_livraison": "1 rue Test",
+            "lignes": [{"produit_id": 1, "quantite": 999}],
+        },
+        headers=auth_header(client_token),
+    )
+    assert response.status_code == 409
+
     assert response.status_code == 200
     assert response.get_json()["statut"] == "expediee"
